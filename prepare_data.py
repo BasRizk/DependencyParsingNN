@@ -1,7 +1,6 @@
-# TODO preparedata.py converts CoNLL data (train and dev) into features of the parser configuration paired
-# with parser decisions. This should be human-readable, i.e. a text file of words/labels. The format
-# should be described in the README
-
+# preparedata.py converts CoNLL data (train and dev) into features of the parser configuration paired
+# with parser decisions. This should be human-readable, i.e. a text file of words/labels. 
+# TODO The format should be described in the README
 # preparedata.py should take in a dependency tree and, based on the heuristics discussed in class,
 # determine parser actions, which will alter the parser configuration, from which the feature set can
 # be determined. Meanwhile 
@@ -35,21 +34,7 @@ def read_parse_tree(filepath="train.orig.conll"):
         if line:
             return line.split("\t")
         return line
-
-    # parse_trees = pd.read_csv("train.orig.conll", header=None, delimiter="\t")
-    # sentences = []    
-    # for _, line in parse_trees.iterrows():
-    #     if line[0] == 1:
-    #         sentences.append(Sentence())
-    #     token = Token(
-    #         token_id = int(line[0]),
-    #         word = line[1],
-    #         pos = line[3],
-    #         head = line[6],
-    #         dep = line[7],
-    #     )
-    #     sentences[-1].add_token(token)
-
+    
     with open(filepath) as parseTreesFile:
         sentences = []
         while True:
