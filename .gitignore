@@ -1,6 +1,7 @@
 *.pdf
 *.conll
 *.jar
+*.converted
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
