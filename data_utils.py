@@ -87,8 +87,10 @@ class Sentence:
 
     def get_trans(self):  # this function is only used for the ground truth
         """ decide transition operation from [shift, left_arc, or right_arc] """
-        for trans in ['left_arc', 'right_arc', 'shift']:
-            if self.check_trans(trans):
+        for operation in ['left_arc', 'right_arc', 'shift']:
+            # Retrive transition name completely
+            trans = self.check_trans(operation)
+            if trans is not None:
                 return trans
         return None
 
@@ -105,8 +107,9 @@ class Sentence:
         def check_left_arc():
             if len(self.stack) < 2 or\
                 self.stack[-1].token_id != self.stack[-2].head:
-                return False
-            return True
+                return None
+            return f"left_arc({self.stack[-2].dep})"
+
         
         # RIGHT, beneth top of stack is parent of top, 
         # and no depends of top in buffer (buff is empty)        
@@ -114,27 +117,29 @@ class Sentence:
             if self._is_dep_in_buff(self.stack[-1].token_id) or\
                 len(self.stack) < 2 or\
                 self.stack[-2].token_id != self.stack[-1].head:
-                return False
-            return True
+                return None
+            return f"right_arc({self.stack[-1].dep})"
 
-        if potential_trans == 'left_arc' and check_left_arc() or\
-           potential_trans == 'right_arc' and check_right_arc() or\
-           potential_trans == 'shift' and len(self.buffer) >= 1:
-            return True
-        return False
+        if potential_trans == 'left_arc':
+            return check_left_arc()
+        if potential_trans == 'right_arc':
+            return check_right_arc()
+        if potential_trans == 'shift' and len(self.buffer) >= 1:
+            return 'shift'
+        return None
     
     def update_state(self, curr_trans, predicted_dep=None):
         """ updates the sentence according to the given transition (may or may not assume legality, you implement) """
-        if curr_trans == 'shift':
+        if 'shift' in curr_trans:
             self.stack.append(self.buffer.pop(0))
             
-        elif curr_trans == 'left_arc':
+        elif 'left_arc' in curr_trans:
             parent = self.stack[-1]
             child = self.stack.pop(-2)
             parent.lc.insert(0, child)
             self.arcs.append((parent, child, child.dep, 'l'))
             
-        elif curr_trans == 'right_arc':
+        elif 'right_arc' in curr_trans:
             parent = self.stack[-2]
             child = self.stack.pop(-1)
             parent.rc.append(child)
@@ -188,7 +193,7 @@ class FeatureGenerator:
         while True:
             word_feat, pos_feat, dep_feat = self.extract_features(sentence)
             trans = sentence.get_trans()
-            if not trans:
+            if trans is None:
                 if len(sentence.stack) > 1:
                     # is projective
                     configs = []
@@ -240,3 +245,37 @@ class FeatureGenerator:
             ]
             
         return features
+    
+    
+class BasicWordEncoder:
+    def __init__(self, training_df) -> None:
+        unique_words = pd.unique(training_df[training_df.columns[:-1]].values.ravel('K'))
+        self.word_to_idx = {w: i+1 for i, w in enumerate(unique_words)}
+        self.word_to_idx[UNK] = 0
+        self.unique_labels = pd.unique(training_df[training_df.columns[-1]])
+        self.label_to_idx = {l: i for i, l in enumerate(self.unique_labels)}
+
+    def _encode_word(self, word):
+        idx = self.word_to_idx.get(word)
+        if idx is None:
+            idx = self.word_to_idx[UNK]
+        return idx
+    
+    def _encode_label(self, label):
+        return self.label_to_idx.get(label)
+        
+    
+    def encode_dataset(self, df, labeled=True):
+        if labeled:
+            df[df.columns[:-1]] = df[df.columns[:-1]].applymap(lambda x: self._encode_word(x))
+            df[df.columns[-1:]] = df[df.columns[-1:]].applymap(lambda x: self._encode_word(x))
+        else:
+            df = df.applymap(lambda x: self._encode_word(x))
+            df = df.applymap(lambda x: self._encode_word(x))
+        return df
+    
+    def get_dictionary_size(self):
+        return len(self.word_to_idx)
+    
+    def get_num_of_labels(self):
+        return len(self.unique_labels)
