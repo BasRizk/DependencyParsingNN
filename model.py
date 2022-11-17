@@ -177,7 +177,6 @@ class Model:
     def load_model(model_file):
         # static so can be called as Model.load_model('examplemodel.model')
         with open(model_file, "rb") as file:
-            print('About to load model')
             # model = pickle.load(file)
             model = CPU_Unpickler(file).load()
             model.init_device()

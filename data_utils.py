@@ -174,23 +174,24 @@ class FeatureGenerator:
             sentence.update_state(trans)        
         return configs            
     
-    @staticmethod
-    def extract_features(self, sentence):
+    @classmethod
+    def extract_features(cls, sentence):
         """ returns the features for a sentence parse configuration """
         # Use embedding generated in extract_features
-        word_feat = self.get_features_attr(
+        word_feat = cls.get_features_attr(
             sentence, lambda t : t.word
         )
-        pos_feat = self.get_features_attr(
+        pos_feat = cls.get_features_attr(
             sentence, lambda t : t.pos
         )
-        dep_feat = self.get_features_attr(
+        dep_feat = cls.get_features_attr(
             sentence, lambda t : t.dep, get_parents=False
         )
     
         return np.concatenate([word_feat, pos_feat, dep_feat])
-        
-    def get_features_attr(self, sentence, getter_func, get_parents=True):
+    
+    @classmethod
+    def get_features_attr(cls, sentence, getter_func, get_parents=True):
         features = []
         if get_parents:
             # s_1, s_2, s_3
