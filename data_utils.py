@@ -48,19 +48,17 @@ class Sentence:
         self.stack = [ROOT_TOKEN]
         self.buffer = tokens.copy()
         self.arcs = []
-        self.predicted_arcs = []
+    
+    def __len__(self):
+        return len(self.tokens)
+    
+    def is_exausted(self):
+        return len(self.stack) == 1 and len(self.buffer) == 0    
     
     def add_token(self, token):
         self.tokens.append(token)
         self.buffer.append(token)
         
-    # def parse_arcs(self):
-    #     while True:
-    #         curr_trans = self.get_trans()
-    #         if not curr_trans:
-    #             break
-    #         self.update_state(curr_trans=curr_trans)
-
     def peek_stack(self, top=1):
         items = list(reversed(self.stack[-top:]))
         if len(self.stack) < top:
@@ -72,28 +70,15 @@ class Sentence:
         if len(self.buffer) < top:
             items += [NULL_TOKEN for _ in range(top - len(self.buffer))]
         return items
-    
-    def is_projective(self):
-        """ determines if sentence is projective when ground truth given """
-        # tree is non-projective if it has crossing arcs. 
-        while True:
-            trans = self.get_trans()
-            if not trans:
-                if len(self.stack) > 1:
-                    return False
-                break
-            self.update_state(trans)  
-        return True  
 
     def get_trans(self):  # this function is only used for the ground truth
         """ decide transition operation from [shift, left_arc, or right_arc] """
         for operation in ['left_arc', 'right_arc', 'shift']:
             # Retrive transition name completely
-            trans = self.check_trans(operation)
+            trans = self._check_trans(operation)
             if trans is not None:
                 return trans
         return None
-
 
     def _is_dep_in_buff(self, token_id):
         for t in self.buffer:
@@ -101,7 +86,7 @@ class Sentence:
                 return True
         return False
 
-    def check_trans(self, potential_trans):
+    def _check_trans(self, potential_trans):
         """ checks if transition can legally be performed"""
         # LEFT, top of stack is parent of beneth it
         def check_left_arc():
@@ -129,20 +114,23 @@ class Sentence:
         return None
     
     def update_state(self, curr_trans, predicted_dep=None):
-        """ updates the sentence according to the given transition (may or may not assume legality, you implement) """
+        """ updates the sentence according to the given transition assuming legality """
+        
         if 'shift' in curr_trans:
             self.stack.append(self.buffer.pop(0))
-            
+        
         elif 'left_arc' in curr_trans:
             parent = self.stack[-1]
             child = self.stack.pop(-2)
             parent.lc.insert(0, child)
+            child.dep = predicted_dep if predicted_dep else child.dep
             self.arcs.append((parent, child, child.dep, 'l'))
             
         elif 'right_arc' in curr_trans:
             parent = self.stack[-2]
             child = self.stack.pop(-1)
             parent.rc.append(child)
+            child.dep = predicted_dep if predicted_dep else child.dep
             self.arcs.append((parent, child, child.dep, 'r'))
             
     def __str__(self) -> str:
@@ -163,24 +151,8 @@ class FeatureGenerator:
         self.columns = [f'{name}' for name in selections]
         self.columns += [f'pos {name}' for name in selections]
         self.columns += [f'dep {name}' for name in selections[6:]]
-
-    #     self.vocab_size = vocab_size
-    #     self.word_to_idx = {}
-    #     self.word_to_idx[ROOT] = 0    
-    #     self.word_to_idx[UNK] = 1
-    #     self.idx_token_counter = 2    
-        
-    # def encode(self, word, token=False):
-    #     if token and len(self.word_to_idx) > self.idx_token_counter:
-    #         return self.word_to_idx[UNK]
-        
-    #     idx = self.word_to_idx.get(word)
-    #     if idx is None:
-    #         idx = self.word_to_idx[word] = self.idx_token_counter
-    #         self.idx_token_counter += 1
-    #     return idx
             
-    def generate_dataset(self, sentences):
+    def generate_labeled_dataset(self, sentences):
         datapoints = []
         for sentence in tqdm(sentences, desc='Sentences'):
             datapoints += self.generate_possible_configs(sentence)
@@ -191,34 +163,32 @@ class FeatureGenerator:
     def generate_possible_configs(self, sentence: Sentence):
         configs = []
         while True:
-            word_feat, pos_feat, dep_feat = self.extract_features(sentence)
+            features = self.extract_features(sentence)
             trans = sentence.get_trans()
             if trans is None:
                 if len(sentence.stack) > 1:
                     # is projective
                     configs = []
                 break
-            configs += [word_feat + pos_feat + dep_feat + [trans]]
+            configs += np.concatenate(features, [trans])
             sentence.update_state(trans)        
         return configs            
-        
-
-        
+    
+    @staticmethod
     def extract_features(self, sentence):
         """ returns the features for a sentence parse configuration """
         # Use embedding generated in extract_features
-        word_features = self.get_features_attr(
+        word_feat = self.get_features_attr(
             sentence, lambda t : t.word
         )
-        pos_features = self.get_features_attr(
+        pos_feat = self.get_features_attr(
             sentence, lambda t : t.pos
         )
-        dep_features = self.get_features_attr(
+        dep_feat = self.get_features_attr(
             sentence, lambda t : t.dep, get_parents=False
         )
-        
-
-        return word_features, pos_features, dep_features
+    
+        return np.concatenate([word_feat, pos_feat, dep_feat])
         
     def get_features_attr(self, sentence, getter_func, get_parents=True):
         features = []
@@ -268,7 +238,7 @@ class BasicWordEncoder:
             idx = self.label_to_idx[UNK]
         return idx
         
-    def _decode_label(self, label_embed):
+    def decode_label(self, label_embed):
         return self.unique_labels[label_embed]
     
     def encode_dataset(self, df, labeled=True):
@@ -280,6 +250,9 @@ class BasicWordEncoder:
             df = df.applymap(lambda x: self._encode_label(x))
         return df
     
+    def encode_features_vector(self, feats):
+        return np.vectorize(self._encode_word)(feats)
+
     def get_dictionary_size(self):
         return len(self.word_to_idx)
     
