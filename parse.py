@@ -58,8 +58,8 @@ def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm, verbose):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parser file configuration.')
     parser.add_argument('-m', default='train.model', type=str, help='model file including vocab (encoding)')
-    parser.add_argument('-i', default='test.sample.conll', type=str, help='input filepath')
-    parser.add_argument('-o', default='pred.sample.conll', type=str, help='output filepath')
+    parser.add_argument('-i', default='parse.in', type=str, help='input filepath')
+    parser.add_argument('-o', default='parse.out', type=str, help='output filepath')
     parser.add_argument('-verbose', default=False, type=bool, help='verbose')
     args = parser.parse_args()
 
