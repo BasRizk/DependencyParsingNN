@@ -80,9 +80,9 @@ class DataParser:
         )))
 
         assert len(head_dep_updates) == len(conll_df)
-        conll_df[[7,8]] = head_dep_updates
+        conll_df[[6,7]] = head_dep_updates
         
         # Write updated conll_df back into conll form
-        conll_df.to_csv(output_filepath, index=False)
+        conll_df.to_csv(output_filepath, sep='\t', index=False, header=None)
             
                 
