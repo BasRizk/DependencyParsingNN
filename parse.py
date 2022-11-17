@@ -29,11 +29,19 @@ def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm):
         s_feats = FeatureGenerator.extract_features(s)
         s_feats = s_feats.reshape((1, len(s_feats)))
         pred_label = model.classify(s_feats)
-        
         trans_type, dep = decompose_pred(pred_label)
-        # performing an action,
-        s.update_state(curr_trans=trans_type, predicted_dep=dep)
         
+        # performing an action
+        updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)
+        
+        # Tweak for better chance on catching correct dependancies:
+        # Drop blocking elements and continue classification
+        if not updated:
+            if len(s.stack) > 1:
+                s.stack.pop(-1)
+            elif len(s.buffer) > 0:
+                s.stack.append(s.buffer.pop(0))
+                
         trange.set_postfix({
             'trans_count': f'{num_infers}/{2*len(s) + 1} [(2*tokens) + 1]',
             'prev_trans': pred_label,

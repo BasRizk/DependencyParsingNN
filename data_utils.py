@@ -89,49 +89,59 @@ class Sentence:
     def _check_trans(self, potential_trans):
         """ checks if transition can legally be performed"""
         # LEFT, top of stack is parent of beneth it
-        def check_left_arc():
-            if len(self.stack) < 2 or\
-                self.stack[-1].token_id != self.stack[-2].head:
+        def check_left_arc_sat():
+            if self.stack[-1].token_id != self.stack[-2].head:
                 return None
             return f"left_arc({self.stack[-2].dep})"
 
-        
         # RIGHT, beneth top of stack is parent of top, 
         # and no depends of top in buffer (buff is empty)        
-        def check_right_arc():
+        def check_right_arc_sat():
             if self._is_dep_in_buff(self.stack[-1].token_id) or\
-                len(self.stack) < 2 or\
                 self.stack[-2].token_id != self.stack[-1].head:
                 return None
             return f"right_arc({self.stack[-1].dep})"
 
-        if potential_trans == 'left_arc':
-            return check_left_arc()
-        if potential_trans == 'right_arc':
-            return check_right_arc()
+        if len(self.stack) >= 2:
+            if potential_trans == 'left_arc':
+                return check_left_arc_sat()
+            if potential_trans == 'right_arc':
+                return check_right_arc_sat()
         if potential_trans == 'shift' and len(self.buffer) >= 1:
             return 'shift'
         return None
-    
+
     def update_state(self, curr_trans, predicted_dep=None):
-        """ updates the sentence according to the given transition assuming legality """
+        """ 
+        updates the sentence according to the given 
+        transition assuming dependancy satisfiability
+        but NOT legality
+        """
         
         if 'shift' in curr_trans:
+            if len(self.buffer) == 0:
+                return False
             self.stack.append(self.buffer.pop(0))
+            return True
         
-        elif 'left_arc' in curr_trans:
+        if len(self.stack) < 2:
+            return False
+        
+        if 'left_arc' in curr_trans:
             parent = self.stack[-1]
             child = self.stack.pop(-2)
             parent.lc.insert(0, child)
             child.dep = predicted_dep if predicted_dep else child.dep
             self.arcs.append((parent, child, child.dep, 'l'))
+            return True
             
-        elif 'right_arc' in curr_trans:
+        if 'right_arc' in curr_trans:
             parent = self.stack[-2]
             child = self.stack.pop(-1)
             parent.rc.append(child)
             child.dep = predicted_dep if predicted_dep else child.dep
             self.arcs.append((parent, child, child.dep, 'r'))
+            return True
             
     def __str__(self) -> str:
         return f"Stack {[t.word for t in self.stack]} | " +\
