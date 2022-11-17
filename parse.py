@@ -22,7 +22,7 @@ def decompose_pred(pred_label):
     trans_type, _, dep = pred_label.groups()
     return trans_type, dep
 
-def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm):
+def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm, verbose):
     num_infers = 0
     while True:
         # getting the features of a current parse state
@@ -42,12 +42,14 @@ def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm):
             elif len(s.buffer) > 0:
                 s.stack.append(s.buffer.pop(0))
                 
-        trange.set_postfix({
-            'trans_count': f'{num_infers}/{2*len(s) + 1} [(2*tokens) + 1]',
-            'prev_trans': pred_label,
-            'stack': f'{[t.word for t in s.stack]}',
-        })
-        num_infers += 1
+        if verbose:
+            trange.set_postfix({
+                'trans_count': f'{num_infers}/{2*len(s) + 1} [(2*tokens) + 1]',
+                'prev_trans': pred_label,
+                'stack': f'{[t.word for t in s.stack]}',
+            })
+            num_infers += 1
+            
         if s.is_exausted():
             break
     return s
@@ -58,14 +60,18 @@ if __name__ == "__main__":
     parser.add_argument('-m', default='train.model', type=str, help='model file including vocab (encoding)')
     parser.add_argument('-i', default='test.sample.conll', type=str, help='input filepath')
     parser.add_argument('-o', default='pred.sample.conll', type=str, help='output filepath')
+    parser.add_argument('-verbose', default=False, type=bool, help='verbose')
     args = parser.parse_args()
 
     sentences = DataParser.read_parse_tree(args.i)
     model = Model.load_model(args.m)
     
     sentences_trange = tqdm(sentences, desc='Trees/Sentences')
+    if not args.verbose:
+        print('\nStopped verbosing!')
+        sentences_trange.close()
     for s in sentences_trange:
-        infer_sentence_tree(model, s, sentences_trange)
+        infer_sentence_tree(model, s, sentences_trange, args.verbose)
     
     # write CoNLL formatted file with depend tree info aka. field 7 & 8
     DataParser.update_conll_file(sentences, args.i, args.o)
