@@ -1,7 +1,5 @@
-
-
-import argparse
 import pickle
+import io
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -9,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 from data_utils import BasicWordEncoder
 
 torch.manual_seed(1)
-from data_utils import Sentence
 
 class LabeledDataset(Dataset):
 
@@ -52,6 +49,17 @@ class NeuralNetwork(torch.nn.Module):
         out = self.linear2(out)
         return out
 
+
+#########################################################################
+# CPU_Unpickler taken from:
+# https://github.com/pytorch/pytorch/issues/16797#issuecomment-633423219
+#########################################################################
+class CPU_Unpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == 'torch.storage' and name == '_load_from_bytes':
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+        return super().find_class(module, name)
+    
 class Model:
     def __init__(self,
             word_encoder: BasicWordEncoder, embedding_dim, num_of_tokens,
@@ -59,7 +67,6 @@ class Model:
             use_gpu=True) -> None:
         
         self.use_gpu = use_gpu
-        self.init_device()
         self.word_encoder = word_encoder
         self.network = NeuralNetwork(
             word_encoder.get_dictionary_size(),
@@ -68,9 +75,8 @@ class Model:
             word_encoder.get_num_of_labels(),
             hidden_size
         )
+        self.init_device()
         
-        self.network.to(self.device)
-
         self.optimizer = torch.optim.Adagrad(
             self.network.parameters(), lr=learning_rate, lr_decay=0,
             weight_decay=regularization_rate,
@@ -83,10 +89,12 @@ class Model:
         
     def init_device(self):
         if self.use_gpu and torch.cuda.is_available():
-            self.device = torch.device('cuda')
             print('Using GPU')
+            self.device = torch.device('cuda')
         else:
+            print('Using CPU')
             self.device = torch.device('cpu')   
+        self.network.to(self.device)
 
     def debug(self, statement='', end="\n", flush=True):
         if self.debug_file:
@@ -160,13 +168,18 @@ class Model:
     
     def save_model(self, model_filename):
         with open(model_filename, "wb") as file:
+            self.device = torch.device('cpu')
+            self.network.to(self.device)
+            print('Transfered forcibly model to CPU')
             pickle.dump(self, file)
 
     @staticmethod
     def load_model(model_file):
         # static so can be called as Model.load_model('examplemodel.model')
         with open(model_file, "rb") as file:
-            model = pickle.load(file)
+            print('About to load model')
+            # model = pickle.load(file)
+            model = CPU_Unpickler(file).load()
             model.init_device()
             model.network.to(model.device)
         return model
