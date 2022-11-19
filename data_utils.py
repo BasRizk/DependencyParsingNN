@@ -180,7 +180,7 @@ class FeatureGenerator:
                     # is projective
                     configs = []
                 break
-            configs += np.concatenate(features, [trans])
+            configs.append(np.append(features, [trans]))
             sentence.update_state(trans)        
         return configs            
     
