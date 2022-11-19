@@ -30,7 +30,8 @@ class NeuralNetwork(torch.nn.Module):
                  embedding_weight=None) -> None:
         super().__init__()
         
-        # embedding_weight = torch.rand((dictionary_size, embedding_dim))*0.01
+        if embedding_weight is not None:
+            embedding_weight = torch.randn((dictionary_size, embedding_dim))*embedding_weight
 
         self.dictionary_size = dictionary_size
         self.num_of_tokens = num_of_tokens
@@ -64,6 +65,7 @@ class Model:
     def __init__(self,
             word_encoder: BasicWordEncoder, embedding_dim, num_of_tokens,
             hidden_size, learning_rate, regularization_rate,
+            embedding_weight=None,
             use_gpu=True) -> None:
         
         self.use_gpu = use_gpu
@@ -73,7 +75,8 @@ class Model:
             embedding_dim,
             num_of_tokens,
             word_encoder.get_num_of_labels(),
-            hidden_size
+            hidden_size,
+            embedding_weight=embedding_weight
         )
         self.init_device()
         

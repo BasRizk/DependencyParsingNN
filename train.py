@@ -17,7 +17,8 @@ if __name__ == "__main__":
     parser.add_argument('-lr', default=0.01, type=float, help='learning rate')
     parser.add_argument('-reg', default=1e-5, type=float, help='regularization amount')
     parser.add_argument('-batch', default=256, type=int, help='mini-batch size')
-    parser.add_argument('-o',  defult='train.model', type=str, help='model file to be written')
+    parser.add_argument('-o',  default='train.model', type=str, help='model file to be written')
+    parser.add_argument('-emb_w_init',  default=1, type=float, help='embedding weights scaling')
     parser.add_argument('-gpu', default=True, type=bool, help='use gpu')
     args = parser.parse_args()
         
@@ -47,6 +48,7 @@ if __name__ == "__main__":
         hidden_size=args.u,
         learning_rate=args.lr,
         regularization_rate=args.reg,
+        embedding_weight=args.emb_w_init,
         use_gpu=args.gpu
     )
     print('Finished Building Model')
