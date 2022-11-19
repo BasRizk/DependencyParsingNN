@@ -1,14 +1,11 @@
-# TODO • train.py trains a model given data preprocessed by preparedata.py and writes a model file
-#
-# TODO train.model is the model file (also possibly vocab file named train.vocab), the result of running
-# train.py on training and dev with base feature set.
-
 import argparse
 import pandas as pd
 from torch.utils.data import DataLoader
 from data_utils import BasicWordEncoder
 from model import Model, LabeledDataset
-    
+"""_summary_
+train.py trains a model given data preprocessed by preparedata.py and writes a model file train.model, including vocab data.
+"""
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Neural net training arguments.')
@@ -20,7 +17,7 @@ if __name__ == "__main__":
     parser.add_argument('-lr', default=0.01, type=float, help='learning rate')
     parser.add_argument('-reg', default=1e-5, type=float, help='regularization amount')
     parser.add_argument('-batch', default=256, type=int, help='mini-batch size')
-    parser.add_argument('-o', type=str, help='model file to be written')
+    parser.add_argument('-o',  defult='train.model', type=str, help='model file to be written')
     parser.add_argument('-gpu', default=True, type=bool, help='use gpu')
     args = parser.parse_args()
         
@@ -59,7 +56,6 @@ if __name__ == "__main__":
     print('Finished Training model')
     
     # Saving model
-    model_filename = 'train.model'
-    model.save_model(model_filename)
-    print(f'Finished saving model as {model_filename}')
+    model.save_model(args.o)
+    print(f'Finished saving model as {args.o}')
     
