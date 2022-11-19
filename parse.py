@@ -22,7 +22,10 @@ def decompose_pred(pred_label):
     trans_type, _, dep = pred_label.groups()
     return trans_type, dep
 
-def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm, verbose):
+def infer_sentence_tree(
+        model: Model, s: Sentence, trange: tqdm, verbose,
+        drop_blocking_elements=True
+    ):
     num_infers = 0
     while True:
         # getting the features of a current parse state
@@ -32,15 +35,7 @@ def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm, verbose):
         trans_type, dep = decompose_pred(pred_label)
         
         # performing an action
-        updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)
-        
-        # Tweak for better chance on catching correct dependancies:
-        # Drop blocking elements and continue classification
-        if not updated:
-            if len(s.stack) > 1:
-                s.stack.pop(-1)
-            elif len(s.buffer) > 0:
-                s.stack.append(s.buffer.pop(0))
+        updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)            
                 
         if verbose:
             trange.set_postfix({
@@ -50,6 +45,17 @@ def infer_sentence_tree(model: Model, s: Sentence, trange: tqdm, verbose):
             })
             num_infers += 1
             
+        # Tweak for better chance on catching correct dependancies:
+        # Drop blocking elements and continue classification
+        if not updated:
+            if drop_blocking_elements:
+                if len(s.stack) > 1:
+                    s.stack.pop(-1)
+                elif len(s.buffer) > 0:
+                    s.stack.append(s.buffer.pop(0))    
+            else:
+                break
+        
         if s.is_exausted():
             break
     return s
@@ -61,6 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', default='parse.in', type=str, help='input filepath')
     parser.add_argument('-o', default='parse.out', type=str, help='output filepath')
     parser.add_argument('-verbose', default=False, type=bool, help='verbose')
+    parser.add_argument('-dropb', default=True, type=bool, help='whether to drop blocking elements while transiting')
     args = parser.parse_args()
 
     sentences = DataParser.read_parse_tree(args.i)
@@ -71,7 +78,9 @@ if __name__ == "__main__":
         print('\nStopped verbosing!')
         sentences_trange.close()
     for s in sentences_trange:
-        infer_sentence_tree(model, s, sentences_trange, args.verbose)
+        infer_sentence_tree(model, s, sentences_trange,
+                            args.verbose,
+                            drop_blocking_elements=args.dropb)
     
     # write CoNLL formatted file with depend tree info aka. field 7 & 8
     DataParser.update_conll_file(sentences, args.i, args.o)
