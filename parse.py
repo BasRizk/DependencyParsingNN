@@ -1,9 +1,8 @@
 import re
 import argparse
 from tqdm import tqdm
-
 from train import Model
-from data_utils import FeatureGenerator, Sentence
+from data_utils import FeatureGenerator, Sentence, log_stats
 from data_parser import DataParser
 
 """_summary_
@@ -50,7 +49,6 @@ def infer_sentence_tree(
             if drop_blocking_elements:
                 if len(s.stack) > 1:
                     dropped_token = s.stack.pop(-1)
-                    # dropped_token.point_to_unk()
                 elif len(s.buffer) > 0:
                     s.stack.append(s.buffer.pop(0))    
             else:
@@ -74,6 +72,17 @@ if __name__ == "__main__":
         print('Dropping blocking elements')
     
     sentences = DataParser.read_parse_tree(args.i)
+    log_stats(sentences)
+    
+    def unlabel_sentence(s):
+        for t in s.tokens:
+            t.head = 0
+            t.dep = 0
+        return s
+    
+    # Ensure empty head and dep
+    sentences = list(map(lambda x: unlabel_sentence(x), sentences))
+
     model = Model.load_model(args.m)
     
     sentences_trange = tqdm(sentences, desc='Trees/Sentences')

@@ -1,5 +1,5 @@
 import argparse
-from data_utils import FeatureGenerator
+from data_utils import FeatureGenerator, log_stats
 from data_parser import DataParser
 
 """_summary_
@@ -19,6 +19,8 @@ if __name__ == "__main__":
     features_generator = FeatureGenerator()
     for filepath in args.data_files:
         sentences = DataParser.read_parse_tree(filepath)
+        log_stats(sentences)
+        
         print(f'Finished reading {filepath} file')
         train_dataset =\
             features_generator.generate_labeled_dataset(

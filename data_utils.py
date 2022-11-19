@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-
+from typing import List
 ROOT = '<root>'
 NULL = '<null>'
 UNK = '<unk>'
-
 
 class Token:
     def __init__(self, token_id, word, pos, head, dep):
@@ -268,3 +267,11 @@ class BasicWordEncoder:
     
     def get_num_of_labels(self):
         return len(self.unique_labels)
+
+
+def log_stats(sentences):
+    num_tokens_per_s = list(map(lambda x: len(x.tokens), sentences))
+    print('Token stats:')
+    print(f'# of sentences: {len(sentences)}')
+    print(f'mean: {np.mean(num_tokens_per_s)}, median: {np.median(num_tokens_per_s)} std: {np.std(num_tokens_per_s)}')
+
