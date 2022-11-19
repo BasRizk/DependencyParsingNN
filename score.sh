@@ -1,0 +1,1 @@
+java -cp stanford-parser.jar edu.stanford.nlp.trees.DependencyScoring -g parse.in -conllx True -s parse.out

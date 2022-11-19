@@ -81,6 +81,7 @@ class DataParser:
             lambda x: [np.array([t.head, t.dep]) for t in x.tokens], 
             sentences
         )))
+        
         head_dep_updates_pt = 0
         
         new_conll_file = open(output_filepath, mode='w')

@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-P_PREFIX = '<p>'
-L_PREFIX = '<l>'
 ROOT = '<root>'
 NULL = '<null>'
 UNK = '<unk>'
@@ -11,20 +9,13 @@ UNK = '<unk>'
 
 class Token:
     def __init__(self, token_id, word, pos, head, dep):
-        self.token_id = int(token_id)
+        self.token_id = token_id
         self.word = word
         self.pos = pos
-        self.head = int(head)
+        self.head = head
         self.dep = dep
-        self.predicted_head = -1
-        self.predicted_dep = '<null>'
         self.lc, self.rc = [], []
         
-    def reset_states(self):
-        self.predicted_head = -1
-        self.predicted_dep = '<null>'
-        self.lc, self.rc = [], []
-    
     def get_left_most_child(self, num=1):
         return self.lc[0 + num - 1] if len(self.lc) >= num else NULL_TOKEN
       
@@ -33,17 +24,17 @@ class Token:
             
     def __str__(self):
         return f"{self.token_id:5} | {self.word} | {self.pos} |" +\
-            " {self.head} | {self.dep}"
+            f" {self.head} | {self.dep}"
 
-ROOT_TOKEN = Token(token_id=0, word=ROOT, pos=ROOT, head=-1, dep=ROOT)
-NULL_TOKEN = Token(token_id=-1, word=NULL, pos=NULL, head=-1, dep=NULL)
-UNK_TOKEN = Token(token_id=-1, word=UNK, pos=UNK, head=-1, dep=UNK)
+ROOT_TOKEN = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
+NULL_TOKEN = Token(token_id="-1", word=NULL, pos=NULL, head="-1", dep=NULL)
+UNK_TOKEN = Token(token_id="-1", word=UNK, pos=UNK, head="-1", dep=UNK)
 
 
 class Sentence:
 
     def __init__(self, tokens=[]):
-        self.root = Token(token_id=0, word=ROOT, pos=ROOT, head=-1, dep=ROOT)
+        self.root = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
         self.tokens = tokens.copy()
         self.stack = [ROOT_TOKEN]
         self.buffer = tokens.copy()
@@ -111,6 +102,11 @@ class Sentence:
             return 'shift'
         return None
 
+    def point_to_unk(self):
+        self.head = UNK_TOKEN.token_id
+        self.dep = UNK
+        
+    
     def update_state(self, curr_trans, predicted_dep=None):
         """ 
         updates the sentence according to the given 
@@ -131,7 +127,9 @@ class Sentence:
             parent = self.stack[-1]
             child = self.stack.pop(-2)
             parent.lc.insert(0, child)
-            child.dep = predicted_dep if predicted_dep else child.dep
+            if predicted_dep is not None:
+                child.dep = predicted_dep
+                child.head = parent.token_id
             self.arcs.append((parent, child, child.dep, 'l'))
             return True
             
@@ -139,7 +137,9 @@ class Sentence:
             parent = self.stack[-2]
             child = self.stack.pop(-1)
             parent.rc.append(child)
-            child.dep = predicted_dep if predicted_dep else child.dep
+            if predicted_dep is not None:
+                child.dep = predicted_dep
+                child.head = parent.token_id
             self.arcs.append((parent, child, child.dep, 'r'))
             return True
             

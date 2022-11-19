@@ -16,7 +16,7 @@ be determined). Both files, then, should point to a third library file which con
 configuration at time t ct and label l, determines ct+1.    
 """
 
-LABEL_PATTERN = r'([a-z_]+)(\(([a-z]+)\))*'
+LABEL_PATTERN = r'([a-z_]+)(\(([a-z:]+)\))*'
 def decompose_pred(pred_label):
     pred_label = re.search(LABEL_PATTERN, pred_label)
     trans_type, _, dep = pred_label.groups()
@@ -24,7 +24,7 @@ def decompose_pred(pred_label):
 
 def infer_sentence_tree(
         model: Model, s: Sentence, trange: tqdm, verbose,
-        drop_blocking_elements=True
+        drop_blocking_elements
     ):
     num_infers = 0
     while True:
@@ -33,10 +33,9 @@ def infer_sentence_tree(
         s_feats = s_feats.reshape((1, len(s_feats)))
         pred_label = model.classify(s_feats)
         trans_type, dep = decompose_pred(pred_label)
-        
         # performing an action
         updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)            
-                
+
         if verbose:
             trange.set_postfix({
                 'trans_count': f'{num_infers}/{2*len(s) + 1} [(2*tokens) + 1]',
@@ -50,7 +49,8 @@ def infer_sentence_tree(
         if not updated:
             if drop_blocking_elements:
                 if len(s.stack) > 1:
-                    s.stack.pop(-1)
+                    dropped_token = s.stack.pop(-1)
+                    dropped_token.point_to_unk()
                 elif len(s.buffer) > 0:
                     s.stack.append(s.buffer.pop(0))    
             else:
@@ -69,7 +69,10 @@ if __name__ == "__main__":
     parser.add_argument('-verbose', default=False, type=bool, help='verbose')
     parser.add_argument('-dropb', default=True, type=bool, help='whether to drop blocking elements while transiting')
     args = parser.parse_args()
-
+    
+    if args.dropb:
+        print('Dropping blocking elements')
+    
     sentences = DataParser.read_parse_tree(args.i)
     model = Model.load_model(args.m)
     
@@ -81,7 +84,7 @@ if __name__ == "__main__":
         infer_sentence_tree(model, s, sentences_trange,
                             args.verbose,
                             drop_blocking_elements=args.dropb)
-    
+   
     # write CoNLL formatted file with depend tree info aka. field 7 & 8
     DataParser.update_conll_file(sentences, args.i, args.o)
     print(f'Finished writing updated CoNLL file as {args.o}')
