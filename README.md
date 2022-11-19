@@ -39,6 +39,7 @@ train.py trains a model given data preprocessed by preparedata.py and writes a m
   - `-reg` regularization amount (default: `1e-5`)
   - `-batch` mini-batch size (default: `256`)
   - `-o` model filepath to be written (default: `train.model`)
+  - `-emb_w_init` embedding weights random normal scaling (default: `0.01`)
   - `-gpu` use gpu (default: `True`)
 
 
@@ -50,7 +51,7 @@ Given a trained model file (and possibly vocabulary file reads in CoNLL data and
   - `-i` input CoNLL filepath (deault: `parse.in`)
   - `-o` output CoNLL filepath (default: `parse.out`)
   - `-verbose` show progress bar (default: `False`)
-  
+  - `-dropb` whether to drop blocking elements while transiting (default: `True`)
 
 
 ### Example
