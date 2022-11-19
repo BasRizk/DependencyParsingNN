@@ -21,6 +21,10 @@ class Token:
       
     def get_right_most_child(self, num=1):
         return self.rc[-1 - num + 1] if len(self.rc) >= num else NULL_TOKEN
+
+    def point_to_unk(self):
+        self.head = UNK_TOKEN.token_id
+        self.dep = UNK
             
     def __str__(self):
         return f"{self.token_id:5} | {self.word} | {self.pos} |" +\
@@ -101,11 +105,6 @@ class Sentence:
         if potential_trans == 'shift' and len(self.buffer) >= 1:
             return 'shift'
         return None
-
-    def point_to_unk(self):
-        self.head = UNK_TOKEN.token_id
-        self.dep = UNK
-        
     
     def update_state(self, curr_trans, predicted_dep=None):
         """ 
