@@ -50,7 +50,7 @@ def infer_sentence_tree(
             if drop_blocking_elements:
                 if len(s.stack) > 1:
                     dropped_token = s.stack.pop(-1)
-                    dropped_token.point_to_unk()
+                    # dropped_token.point_to_unk()
                 elif len(s.buffer) > 0:
                     s.stack.append(s.buffer.pop(0))    
             else:
