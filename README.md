@@ -7,6 +7,7 @@ Converts CoNLL data (train and dev) into features of the parser configuration pa
 
 ### Parameters:
   - `-f` data files (default: `train.orig.conll dev.orig.conll`)
+  - `-trans` transition system (default: `std` for `arc-standrad`, other options: `eager`)
 
 ### Format of generated files
 #### (filename format: `WORD_BEFORE_DOT.converted`)
@@ -55,7 +56,7 @@ Given a trained model file (and possibly vocabulary file reads in CoNLL data and
   - `-o` output CoNLL filepath (default: `parse.out`)
   - `-verbose` show progress bar (default: `False`)
   - `-dropb` whether to drop blocking elements while transiting (default: `True`)
-
+  - `-trans` transition system (default: `std` for `arc-standrad`, other options: `eager`)
 
 ### Example
 >

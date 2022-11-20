@@ -49,6 +49,8 @@ def infer_sentence_tree(
             if drop_blocking_elements:
                 if len(s.stack) > 1:
                     dropped_token = s.stack.pop(-1)
+                    # assign arbitirarly something (head is previous token)
+                    dropped_token.head = str(int(dropped_token.token_id) - 1)
                 elif len(s.buffer) > 0:
                     s.stack.append(s.buffer.pop(0))    
             else:
@@ -64,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('-m', default='train.model', type=str, help='model file including vocab (encoding)')
     parser.add_argument('-i', default='parse.in', type=str, help='input filepath')
     parser.add_argument('-o', default='parse.out', type=str, help='output filepath')
+    parser.add_argument('-trans', default='std', type=str, help='transition system')
     parser.add_argument('-verbose', default=False, type=bool, help='verbose')
     parser.add_argument('-dropb', default=True, type=bool, help='whether to drop blocking elements while transiting')
     args = parser.parse_args()
@@ -71,9 +74,10 @@ if __name__ == "__main__":
     if args.dropb:
         print('Dropping blocking elements')
     
-    sentences = DataParser.read_parse_tree(args.i)
+    sentences = DataParser.read_parse_tree(args.i, transition_system=args.trans)
     log_stats(sentences)
     
+    # Ensure unlabeled
     def unlabel_sentence(s):
         for t in s.tokens:
             t.head = 0

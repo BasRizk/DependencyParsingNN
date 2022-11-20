@@ -14,6 +14,7 @@ class Token:
         self.head = head
         self.dep = dep
         self.lc, self.rc = [], []
+        self.attached = False # Used arbitirarly with arc-eager system only
         
     def get_left_most_child(self, num=1):
         return self.lc[0 + num - 1] if len(self.lc) >= num else NULL_TOKEN
@@ -36,12 +37,22 @@ UNK_TOKEN = Token(token_id="-1", word=UNK, pos=UNK, head="-1", dep=UNK)
 
 class Sentence:
 
-    def __init__(self, tokens=[]):
+    def __init__(self, tokens=[], transition_system='std'):
         self.root = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
         self.tokens = tokens.copy()
         self.stack = [ROOT_TOKEN]
         self.buffer = tokens.copy()
         self.arcs = []
+        if transition_system == 'std':
+            self.update_state = self.update_state_std
+            self._check_trans = self._check_trans_std
+            self.supported_operations =\
+                ['left_arc', 'right_arc', 'shift']
+        else:
+            self.update_state = self.update_state_eager
+            self._check_trans = self._check_trans_eager
+            self.supported_operations =\
+                ['left_arc', 'right_arc', 'reduce', 'shift']
     
     def __len__(self):
         return len(self.tokens)
@@ -67,10 +78,12 @@ class Sentence:
 
     def get_trans(self):  # this function is only used for the ground truth
         """ decide transition operation from [shift, left_arc, or right_arc] """
-        for operation in ['left_arc', 'right_arc', 'shift']:
+        for operation in self.supported_operations:
             # Retrive transition name completely
             trans = self._check_trans(operation)
             if trans is not None:
+                # print(trans, self)
+                # breakpoint()
                 return trans
         return None
 
@@ -80,7 +93,85 @@ class Sentence:
                 return True
         return False
 
-    def _check_trans(self, potential_trans):
+    def _check_trans_eager(self, potential_trans):
+        """ checks if transition can legally be performed"""
+        # LEFT, top of buffer is parent of top of stack
+        def check_left_arc_sat():
+            if self.buffer[0].token_id != self.stack[-1].head:
+                return None
+            return f"left_arc({self.stack[-1].dep})"
+
+        # RIGHT, top of stack is parent of top in buffer       
+        def check_right_arc_sat():
+            if self.stack[-1].token_id != self.buffer[0].head:
+                return None
+            return f"right_arc({self.buffer[-1].dep})"
+        
+        # top of the stack has an assigned parent and no unassigned children
+        def check_reduce():
+            if not self.stack[-1].attached or self._is_dep_in_buff(self.stack[-1].token_id):
+                return None
+            return 'reduce'
+        
+        if len(self.stack) > 0 and len(self.buffer) > 0:
+            if potential_trans == 'left_arc':
+                return check_left_arc_sat()
+            if potential_trans == 'right_arc':
+                return check_right_arc_sat()
+        if potential_trans == 'reduce' and len(self.stack) >= 1:
+            return check_reduce()
+        if potential_trans == 'shift' and len(self.buffer) >= 1:
+            return 'shift'
+        return None
+    
+    def update_state_eager(self, curr_trans, predicted_dep=None):
+        """ 
+        updates the sentence according to the given 
+        transition assuming dependancy satisfiability
+        but NOT legality
+        """
+
+        if 'shift' in curr_trans:
+            if len(self.buffer) == 0:
+                return False
+            self.stack.append(self.buffer.pop(0))
+            return True
+        
+        if len(self.stack) < 1:
+            return False
+        
+        # top of buffer is parent of top of stack
+        if 'left_arc' in curr_trans:
+            parent = self.buffer[0]
+            child = self.stack.pop(-1)
+            parent.lc.insert(0, child)
+            if predicted_dep is not None:
+                child.dep = predicted_dep
+                child.head = parent.token_id
+            child.attached = True
+            self.arcs.append((parent, child, child.dep, 'l'))
+            return True
+            
+        # top of stack is parent of top in buffer
+        if 'right_arc' in curr_trans:
+            parent = self.stack[-1]
+            child = self.buffer[0]
+            parent.rc.append(child)
+            if predicted_dep is not None:
+                child.dep = predicted_dep
+                child.head = parent.token_id
+            child.attached = True
+            self.arcs.append((parent, child, child.dep, 'r'))
+        
+            return self.update_state_eager('shift')
+
+        if 'reduce' in curr_trans:
+            if len(self.stack) == 0:
+                return False
+            self.stack.pop(-1)
+            return True
+    
+    def _check_trans_std(self, potential_trans):
         """ checks if transition can legally be performed"""
         # LEFT, top of stack is parent of second-top
         def check_left_arc_sat():
@@ -105,7 +196,8 @@ class Sentence:
             return 'shift'
         return None
     
-    def update_state(self, curr_trans, predicted_dep=None):
+    
+    def update_state_std(self, curr_trans, predicted_dep=None):
         """ 
         updates the sentence according to the given 
         transition assuming dependancy satisfiability
@@ -140,7 +232,7 @@ class Sentence:
                 child.head = parent.token_id
             self.arcs.append((parent, child, child.dep, 'r'))
             return True
-            
+        
     def __str__(self) -> str:
         return f"Stack {[t.word for t in self.stack]} | " +\
             f"Buffer {[t.word for t in self.buffer]}"
@@ -181,6 +273,7 @@ class FeatureGenerator:
             trans = sentence.get_trans()
             if trans is None:
                 if len(sentence.stack) > 1:
+                    # breakpoint()
                     # is not projective
                     configs = []
                 break

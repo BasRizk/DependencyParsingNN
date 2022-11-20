@@ -41,7 +41,7 @@ class DataParser:
         file.write("\t".join(line) + "\n")
     
     @staticmethod
-    def read_parse_tree(filepath="train.orig.conll"):        
+    def read_parse_tree(filepath="train.orig.conll", transition_system='std'):        
         with open(filepath) as parseTreesFile:
             sentences = []
             while True:
@@ -63,7 +63,7 @@ class DataParser:
                     if not line:
                         # Sentence is over
                         sentences.append(
-                            Sentence(sentence_tokens)
+                            Sentence(sentence_tokens, transition_system=transition_system)
                         )
                         break
                     
@@ -74,7 +74,8 @@ class DataParser:
     def update_conll_file(
             sentences: List[Sentence],
             conll_filepath: str,
-            output_filepath
+            output_filepath,
+            transition_system='std'
         ):
         
         head_dep_updates = np.concatenate(list(map(
