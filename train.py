@@ -2,7 +2,7 @@ import time
 import argparse
 import pandas as pd
 from torch.utils.data import DataLoader
-from data_utils import BasicWordEncoder
+from word_encoder import BasicWordEncoder
 from model import Model, LabeledDataset
 """_summary_
 train.py trains a model given data preprocessed by preparedata.py and writes a model file train.model, including vocab data.

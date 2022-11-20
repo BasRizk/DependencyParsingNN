@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from data_utils import BasicWordEncoder
+from word_encoder import BasicWordEncoder
 
 torch.manual_seed(1)
 
