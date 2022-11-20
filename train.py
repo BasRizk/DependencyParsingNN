@@ -29,6 +29,8 @@ if __name__ == "__main__":
     
     # Encode data
     word_encoder = BasicWordEncoder(train_df)
+    print(f'Encoding based on {word_encoder.get_dictionary_size()} vocab'
+          f'and {word_encoder.get_num_of_labels()} labels')
     train_df = word_encoder.encode_dataset(train_df)
     print('Encoding Train data', end='\r')
     dev_df = word_encoder.encode_dataset(dev_df)

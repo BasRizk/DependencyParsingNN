@@ -82,13 +82,13 @@ class Sentence:
 
     def _check_trans(self, potential_trans):
         """ checks if transition can legally be performed"""
-        # LEFT, top of stack is parent of beneth it
+        # LEFT, top of stack is parent of second-top
         def check_left_arc_sat():
             if self.stack[-1].token_id != self.stack[-2].head:
                 return None
             return f"left_arc({self.stack[-2].dep})"
 
-        # RIGHT, beneth top of stack is parent of top, 
+        # RIGHT, second-top of stack is parent of top, 
         # and no depends of top in buffer (buff is empty)        
         def check_right_arc_sat():
             if self._is_dep_in_buff(self.stack[-1].token_id) or\
@@ -162,8 +162,14 @@ class FeatureGenerator:
             
     def generate_labeled_dataset(self, sentences):
         datapoints = []
+        num_dropped_sentences = 0
         for sentence in tqdm(sentences, desc='Sentences'):
-            datapoints += self.generate_possible_configs(sentence)
+            possible_configs = self.generate_possible_configs(sentence)
+            if len(possible_configs) > 0:
+                datapoints += possible_configs
+            else:
+                num_dropped_sentences += 1
+        print(f'Dropped configs of {num_dropped_sentences} sentences of {len(sentences)}.')
         datapoints =\
             pd.DataFrame(datapoints, columns = self.columns + ['label'])
         return datapoints
@@ -175,7 +181,7 @@ class FeatureGenerator:
             trans = sentence.get_trans()
             if trans is None:
                 if len(sentence.stack) > 1:
-                    # is projective
+                    # is not projective
                     configs = []
                 break
             configs.append(np.append(features, [trans]))

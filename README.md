@@ -10,7 +10,7 @@ Converts CoNLL data (train and dev) into features of the parser configuration pa
 
 ### Format of generated files
 #### (filename format: `WORD_BEFORE_DOT.converted`)
-prepare_data.py puts the data into csv `WORD_BEFORE_DOT.converted` file with the following columns:
+prepare_data.py puts the data into csv `WORD_BEFORE_DOT.converted` file with the `49` columns of information based on the following tokens:
 >     [
 >       's_1', 's_2', 's_3',
 >       'b_1', 'b_2', 'b_3',
@@ -21,10 +21,13 @@ prepare_data.py puts the data into csv `WORD_BEFORE_DOT.converted` file with the
 >     ]
 
 where given a sentence:
--  `s_i` corresponds to element (token) `i` on its stack,
--  `b_i` corresponds to element i on its buffer,
+-  `s_i` corresponds to element (token) `i` on its stack, 
+-  `b_i` corresponds to element (token) `i` on its buffer,
 -  `lc_i(x)` corresponds to `ith` left child of element `x`
 -  `rc_i(x)` corresponds to `ith` right child of element `x`
+-  if any of token is empty, a `NULL` token is placed instead
+
+The `49` columns consist accordingly of `18` titled just like the notion above containing tokens `word`s themselves, another `18` title similarly but prefixed with `pos` containing pos tags of those those selected tokens,  `12` corresponding to arc-labels of the selected tokens excluding the first `6` parent tokens (on the top of the stack and the buffer), and finally `1` column including the label of the configuration formatted as `TRANSITION_TYPE`(`ARC_DEPENDENCY`).
 
 ## `train.py`
 train.py trains a model given data preprocessed by preparedata.py and writes a model file train.model, including vocab data.
