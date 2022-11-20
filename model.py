@@ -31,7 +31,10 @@ class NeuralNetwork(torch.nn.Module):
         super().__init__()
         
         if embedding_weight is not None:
-            embedding_weight = torch.randn((dictionary_size, embedding_dim))*embedding_weight
+            # normal
+            # embedding_weight = torch.randn((dictionary_size, embedding_dim))*embedding_weight
+            # uniform
+            embedding_weight = torch.rand((dictionary_size, embedding_dim))*embedding_weight
 
         self.dictionary_size = dictionary_size
         self.num_of_tokens = num_of_tokens
@@ -78,6 +81,7 @@ class Model:
             hidden_size,
             embedding_weight=embedding_weight
         )
+
         self.init_device()
         
         self.optimizer = torch.optim.Adagrad(
