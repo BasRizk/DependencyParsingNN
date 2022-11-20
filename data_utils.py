@@ -43,17 +43,23 @@ class Sentence:
         self.stack = [ROOT_TOKEN]
         self.buffer = tokens.copy()
         self.arcs = []
-        if transition_system == 'std':
+        self.setup_trans_sys(transition_system)
+    
+    def setup_trans_sys(self, trans_system):
+        if trans_system == 'std':
+            # arc-standard
             self.update_state = self.update_state_std
-            self._check_trans = self._check_trans_std
+            self._get_trans = self._get_trans_std
             self.supported_operations =\
                 ['left_arc', 'right_arc', 'shift']
         else:
+            # arc-eager
             self.update_state = self.update_state_eager
-            self._check_trans = self._check_trans_eager
+            self._get_trans = self._get_trans_eager
             self.supported_operations =\
                 ['left_arc', 'right_arc', 'reduce', 'shift']
-    
+        
+        
     def __len__(self):
         return len(self.tokens)
     
@@ -80,7 +86,7 @@ class Sentence:
         """ decide transition operation from [shift, left_arc, or right_arc] """
         for operation in self.supported_operations:
             # Retrive transition name completely
-            trans = self._check_trans(operation)
+            trans = self._get_trans(operation)
             if trans is not None:
                 # print(trans, self)
                 # breakpoint()
@@ -93,8 +99,9 @@ class Sentence:
                 return True
         return False
 
-    def _check_trans_eager(self, potential_trans):
-        """ checks if transition can legally be performed"""
+    def _get_trans_eager(self, potential_trans):
+        """ get transition if it can legally be performed"""
+        
         # LEFT, top of buffer is parent of top of stack
         def check_left_arc_sat():
             if self.buffer[0].token_id != self.stack[-1].head:
@@ -105,22 +112,22 @@ class Sentence:
         def check_right_arc_sat():
             if self.stack[-1].token_id != self.buffer[0].head:
                 return None
-            return f"right_arc({self.buffer[-1].dep})"
+            return f"right_arc({self.buffer[0].dep})"
         
         # top of the stack has an assigned parent and no unassigned children
         def check_reduce():
             if not self.stack[-1].attached or self._is_dep_in_buff(self.stack[-1].token_id):
                 return None
             return 'reduce'
-        
+
         if len(self.stack) > 0 and len(self.buffer) > 0:
             if potential_trans == 'left_arc':
                 return check_left_arc_sat()
             if potential_trans == 'right_arc':
                 return check_right_arc_sat()
-        if potential_trans == 'reduce' and len(self.stack) >= 1:
+        if potential_trans == 'reduce' and len(self.stack) > 0:
             return check_reduce()
-        if potential_trans == 'shift' and len(self.buffer) >= 1:
+        if potential_trans == 'shift' and len(self.buffer) > 0:
             return 'shift'
         return None
     
@@ -171,8 +178,8 @@ class Sentence:
             self.stack.pop(-1)
             return True
     
-    def _check_trans_std(self, potential_trans):
-        """ checks if transition can legally be performed"""
+    def _get_trans_std(self, potential_trans):
+        """ get transition if it can legally be performed"""
         # LEFT, top of stack is parent of second-top
         def check_left_arc_sat():
             if self.stack[-1].token_id != self.stack[-2].head:

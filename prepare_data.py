@@ -7,6 +7,16 @@ preparedata.py converts CoNLL data (train and dev) into features of the parser c
 with parser decisions. 
 """
 
+def debug_labels_generated(labeled_dataset):
+    import re
+    from parse import LABEL_PATTERN
+    deps = labeled_dataset['label']\
+        .apply(lambda x: re.search(LABEL_PATTERN, x).groups()[1])\
+        .unique()
+    deps = [x for x in deps if x is not None]
+    deps.sort()
+    print(deps, '\n', len(deps), 'dependancies found including')
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preparing Data Configuration.')
     parser.add_argument(
@@ -28,12 +38,17 @@ if __name__ == "__main__":
         log_stats(sentences)
         
         print(f'Finished reading {filepath} file')
-        train_dataset =\
+        labeled_dataset =\
             features_generator.generate_labeled_dataset(
                 sentences
                 )
         print("Finished generating features") 
         out_filepath = f'{filepath.split(".")[0]}.converted'
-        train_dataset.to_csv(out_filepath, index=False)
+        
+        # JUST FOR DEBUGGING
+        # debug_labels_generated(labeled_dataset)
+            
+        labeled_dataset.to_csv(out_filepath, index=False)
+        
         print(f"Written {out_filepath}")        
       
