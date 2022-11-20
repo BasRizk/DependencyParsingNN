@@ -1,4 +1,5 @@
 import re
+import time
 import argparse
 from tqdm import tqdm
 from train import Model
@@ -93,10 +94,13 @@ if __name__ == "__main__":
     if not args.verbose:
         print('\nStopped verbosing!')
         sentences_trange.close()
+    
+    infer_stime = time.time()
     for s in sentences_trange:
         infer_sentence_tree(model, s, sentences_trange,
                             args.verbose,
                             drop_blocking_elements=args.dropb)
+    print(f'Finshed infering sentences trees in {time.time() - infer_stime: < .2f}s')
    
     # write CoNLL formatted file with depend tree info aka. field 7 & 8
     DataParser.update_conll_file(sentences, args.i, args.o)

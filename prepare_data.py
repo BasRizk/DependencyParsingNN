@@ -1,3 +1,4 @@
+import time
 import argparse
 from data_utils import FeatureGenerator, log_stats
 from data_parser import DataParser
@@ -38,11 +39,12 @@ if __name__ == "__main__":
         log_stats(sentences)
         
         print(f'Finished reading {filepath} file')
+        gen_stime = time.time()
         labeled_dataset =\
             features_generator.generate_labeled_dataset(
                 sentences
                 )
-        print("Finished generating features") 
+        print(f"Finished generating features in {time.time() - gen_stime: < .2f}s") 
         out_filepath = f'{filepath.split(".")[0]}.converted'
         
         # JUST FOR DEBUGGING

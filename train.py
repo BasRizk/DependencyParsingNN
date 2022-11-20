@@ -1,3 +1,4 @@
+import time
 import argparse
 import pandas as pd
 from torch.utils.data import DataLoader
@@ -31,10 +32,12 @@ if __name__ == "__main__":
     word_encoder = BasicWordEncoder(train_df)
     print(f'Encoding based on {word_encoder.get_dictionary_size()} vocab '
           f'& {word_encoder.get_num_of_labels()} labels')
+    encode_stime = time.time()
     train_df = word_encoder.encode_dataset(train_df)
-    print('Encoding Train data', end='\r')
+    print(f'Encoding Train data in {time.time() - encode_stime: < .2f}s', end='\r')
+    encode_stime = time.time()
     dev_df = word_encoder.encode_dataset(dev_df)
-    print('Encoding Dev data', end='\r')
+    print(f'Encoding Dev data in {time.time() - encode_stime: < .2f}s', end='\r')
     print('Finished Encoding Dataset')
     
     # build data loaders    
@@ -56,9 +59,10 @@ if __name__ == "__main__":
     print('Finished Building Model')
 
     # Train model
+    train_stime = time.time()
     model.train_model(train_loader, dev_loader, epochs=args.e)
-    print('Finished Training model')
-    
+    print(f'Finished Training model in {time.time() - train_stime: < .2f}s')
+
     # Saving model
     model.save_model(args.o)
     print(f'Finished saving model as {args.o}')
