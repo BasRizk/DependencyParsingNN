@@ -93,6 +93,8 @@ class Model:
         self.criterion = nn.CrossEntropyLoss()
     
         print(self.network)
+        print(f'Emb_W_scaling = {embedding_weight}, lr = {learning_rate}, '
+              f'reg_rate = {regularization_rate}')
         
     def init_device(self):
         if self.use_gpu and torch.cuda.is_available():
