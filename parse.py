@@ -34,12 +34,8 @@ def infer_sentence_tree(
         s_feats = s_feats.reshape((1, len(s_feats)))
         pred_label = model.classify(s_feats)
         trans_type, dep = decompose_pred(pred_label)
-        # print(pred_label, s)
-        # breakpoint()
-        # performing an action
         updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)            
-
-        if verbose:
+        if verbose >= 2:
             trange.set_postfix({
                 'trans_count': f'{num_infers}/{2*len(s) + 1} [(2*tokens) + 1]',
                 'prev_trans': pred_label,
@@ -71,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', default='parse.in', type=str, help='input filepath')
     parser.add_argument('-o', default='parse.out', type=str, help='output filepath')
     parser.add_argument('-trans', default='std', type=str, help='transition system')
-    parser.add_argument('-verbose', default=False, type=bool, help='verbose')
+    parser.add_argument('-verbose', default=0, type=int, help='verbose')
     parser.add_argument('-dropb', default=True, type=bool, help='whether to drop blocking elements while transiting')
     args = parser.parse_args()
     
@@ -99,8 +95,8 @@ if __name__ == "__main__":
     model = Model.load_model(args.m)
     
     sentences_trange = tqdm(sentences, desc='Trees/Sentences')
-    if not args.verbose:
-        print('\nStopped verbosing!')
+    if args.verbose <= 0:
+        print('\nStopped verbosing completely!')
         sentences_trange.close()
     
     infer_stime = time.time()
