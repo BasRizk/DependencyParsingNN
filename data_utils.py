@@ -98,6 +98,14 @@ class Sentence:
             if t.head == token_id:
                 return True
         return False
+    
+    def _has_unassigned_child(self, token):
+        for child_t in self.buffer + self.stack:
+            if child_t in token.lc or child_t in token.rc:
+                continue
+            if child_t.head == token.token_id:
+                return True
+        return False
 
     def _get_trans_eager(self, potential_trans):
         """ get transition if it can legally be performed"""
@@ -116,7 +124,8 @@ class Sentence:
         
         # top of the stack has an assigned parent and no unassigned children
         def check_reduce():
-            if not self.stack[-1].attached or self._is_dep_in_buff(self.stack[-1].token_id):
+            if not self.stack[-1].attached or\
+                self._has_unassigned_child(self.stack[-1]):
                 return None
             return 'reduce'
 
