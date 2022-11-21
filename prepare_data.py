@@ -1,6 +1,7 @@
 import time
 import argparse
-from data_utils import FeatureGenerator, log_stats
+from data_utils import log_stats
+from feature_generator import FeatureGenerator
 from data_parser import DataParser
 
 """_summary_
@@ -48,7 +49,7 @@ if __name__ == "__main__":
         out_filepath = f'{filepath.split(".")[0]}.converted'
         
         # JUST FOR DEBUGGING
-        debug_labels_generated(labeled_dataset)
+        # debug_labels_generated(labeled_dataset)
             
         labeled_dataset.to_csv(out_filepath, index=False)
         

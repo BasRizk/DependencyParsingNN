@@ -26,7 +26,8 @@ if __name__ == "__main__":
     # Read training/dev data
     train_df = pd.read_csv(args.t)
     dev_df = pd.read_csv(args.d)
-    print('Finished Reading Dataset')
+    print(f'Finished Reading Dataset {len(train_df)}, '
+          f'and {len(dev_df)} train and dev datapoints')
     
     # Encode data
     word_encoder = BasicWordEncoder(train_df)

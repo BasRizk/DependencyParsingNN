@@ -3,7 +3,8 @@ import time
 import argparse
 from tqdm import tqdm
 from train import Model
-from data_utils import FeatureGenerator, Sentence, log_stats
+from data_utils import Sentence, log_stats
+from feature_generator import FeatureGenerator
 from data_parser import DataParser
 
 """_summary_
@@ -33,6 +34,8 @@ def infer_sentence_tree(
         s_feats = s_feats.reshape((1, len(s_feats)))
         pred_label = model.classify(s_feats)
         trans_type, dep = decompose_pred(pred_label)
+        # print(pred_label, s)
+        # breakpoint()
         # performing an action
         updated = s.update_state(curr_trans=trans_type, predicted_dep=dep)            
 
