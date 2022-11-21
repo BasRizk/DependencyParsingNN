@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import tqdm as tqdm
+from tqdm import tqdm
 from data_utils import Sentence
 
 
@@ -39,6 +39,10 @@ class FeatureGenerator:
         while True:
             features = self.extract_features(sentence)
             trans = sentence.get_trans()
+            # print()
+            # print(trans, sentence)
+            # print()
+            # breakpoint()
             if trans is None:
                 if len(sentence.stack) > 1:
                     # breakpoint()
