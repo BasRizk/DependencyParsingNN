@@ -16,7 +16,7 @@ def debug_labels_generated(labeled_dataset):
         .unique()
     deps = [x for x in deps if x is not None]
     deps.sort()
-    print(deps, '\n', len(deps), 'dependancies found including')
+    print(deps, '\n', len(deps), 'dependancies found')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preparing Data Configuration.')
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     
     features_generator = FeatureGenerator()
     for filepath in args.data_files:
-        sentences = DataParser.read_parse_tree(filepath, transition_system=args.trans)[1:]
+        sentences = DataParser.read_parse_tree(filepath, transition_system=args.trans)
         log_stats(sentences)
         
         print(f'Finished reading {filepath} file')
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         out_filepath = f'{filepath.split(".")[0]}.converted'
         
         # JUST FOR DEBUGGING
-        # debug_labels_generated(labeled_dataset)
+        debug_labels_generated(labeled_dataset)
             
         labeled_dataset.to_csv(out_filepath, index=False)
         

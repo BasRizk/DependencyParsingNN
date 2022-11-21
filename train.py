@@ -34,10 +34,10 @@ if __name__ == "__main__":
           f'& {word_encoder.get_num_of_labels()} labels')
     encode_stime = time.time()
     train_df = word_encoder.encode_dataset(train_df)
-    print(f'Encoding Train data in {time.time() - encode_stime: < .2f}s', end='\r')
+    print(f'Encoding Train data in {time.time() - encode_stime: < .2f}s')
     encode_stime = time.time()
     dev_df = word_encoder.encode_dataset(dev_df)
-    print(f'Encoding Dev data in {time.time() - encode_stime: < .2f}s', end='\r')
+    print(f'Encoding Dev data in {time.time() - encode_stime: < .2f}s')
     print('Finished Encoding Dataset')
     
     # build data loaders    
