@@ -32,7 +32,40 @@ class Token:
         return f"{self.token_id:5} | {self.word} | {self.pos} |" +\
             f" {self.head} | {self.dep}"
 
-ROOT_TOKEN = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
+    def print_children(self):
+        lc = [(t.word, t.token_id) for t in self.lc]
+        rc = [(t.word, t.token_id) for t in self.rc]
+        print(f'{self.token_id} {self.word} : left {lc} | right {rc}')
+    
+    def _enforce_children_order_debug(self):
+        try:
+            lc = [int(t.token_id) for t in self.lc]
+            for i in range(len(lc) - 1):
+                assert lc[i] < lc[i+1]
+                assert int(self.token_id) > lc[i]
+            if len(lc) > 1:
+                assert int(self.token_id) > lc[-1]
+        except:
+            print('\nproblem with lc')
+            breakpoint()
+            return False
+        try:
+            rc = [int(t.token_id) for t in self.rc]
+            for i in range(len(rc) - 1):
+                assert rc[i] < rc[i+1]
+                assert int(self.token_id) < rc[i]
+            if len(rc) > 1:
+                assert int(self.token_id) < rc[-1]
+        except:
+            print('\nproblem with rc')
+            breakpoint()
+            return False
+        return True
+
+    
+        
+    
+# ROOT_TOKEN = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
 NULL_TOKEN = Token(token_id="-1", word=NULL, pos=NULL, head="-1", dep=NULL)
 UNK_TOKEN = Token(token_id="-1", word=UNK, pos=UNK, head="-1", dep=UNK)
 
@@ -42,7 +75,7 @@ class Sentence:
     def __init__(self, tokens=[], transition_system='std'):
         self.root = Token(token_id="0", word=ROOT, pos=ROOT, head="-1", dep=ROOT)
         self.tokens = tokens.copy()
-        self.stack = [ROOT_TOKEN]
+        self.stack = [self.root]
         self.buffer = tokens.copy()
         self.arcs = []
         self.setup_trans_sys(transition_system)
@@ -169,11 +202,19 @@ class Sentence:
         if 'left_arc' in curr_trans:
             parent = self.buffer[0]
             child = self.stack.pop(-1)
+            # if not child.attached:
             parent.lc.insert(0, child)
+            child.attached = True
+            # DEBUG ONLY
+            # breakpoint()
+            # parent._enforce_children_order_debug()
+            # if not parent._enforce_children_order_debug():
+            #     breakpoint()
+            # print('parent', parent.word)
+            # breakpoint()
             if predicted_dep is not None:
                 child.dep = predicted_dep
                 child.head = parent.token_id
-            child.attached = True
             self.arcs.append((parent, child, child.dep, 'l'))
             return True
             
@@ -181,14 +222,22 @@ class Sentence:
         if 'right_arc' in curr_trans:
             parent = self.stack[-1]
             child = self.buffer[0]
+            # if not child.attached:
             parent.rc.append(child)
+            child.attached = True
+            # DEBUG ONLY
+            # if self.buffer[0].word == 'prevent':
+            #     breakpoint()
+            # parent._enforce_children_order_debug()
+            #     breakpoint()
+            # print('parent', parent.word)
+            # breakpoint()
             if predicted_dep is not None:
                 child.dep = predicted_dep
                 child.head = parent.token_id
-            child.attached = True
             self.arcs.append((parent, child, child.dep, 'r'))
         
-            return self.update_state_eager('shift')
+            return self.update_state_eager('shift-r')
 
     def _get_trans_std(self, potential_trans):
         """ get transition if it can legally be performed"""
