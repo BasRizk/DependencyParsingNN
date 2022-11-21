@@ -153,7 +153,14 @@ class Sentence:
             self.stack.append(self.buffer.pop(0))
             return True
         
-        if len(self.stack) < 1:
+        
+        if 'reduce' in curr_trans:
+            if len(self.stack) == 0:
+                return False
+            self.stack.pop(-1)
+            return True
+    
+        if len(self.stack) < 1 or len(self.buffer) < 1:
             return False
         
         # top of buffer is parent of top of stack
@@ -181,12 +188,6 @@ class Sentence:
         
             return self.update_state_eager('shift')
 
-        if 'reduce' in curr_trans:
-            if len(self.stack) == 0:
-                return False
-            self.stack.pop(-1)
-            return True
-    
     def _get_trans_std(self, potential_trans):
         """ get transition if it can legally be performed"""
         # LEFT, top of stack is parent of second-top

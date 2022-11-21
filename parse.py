@@ -72,6 +72,11 @@ if __name__ == "__main__":
     parser.add_argument('-dropb', default=True, type=bool, help='whether to drop blocking elements while transiting')
     args = parser.parse_args()
     
+    if args.trans == 'std':
+        print('Using arc-standard transition system')
+    else:
+        print('Using arc-eager transition system')
+        
     if args.dropb:
         print('Dropping blocking elements')
     
